@@ -212,7 +212,7 @@ Stim300::startUp(){
 		fflush(stdout);
 		sleep(1);
 	}
-	printf("\rStarting up");
+	printf("\rStarting up master branch");
 
 	serialOpen(true);
 	/**
