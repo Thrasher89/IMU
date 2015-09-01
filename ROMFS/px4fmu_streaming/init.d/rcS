@@ -1,0 +1,32 @@
+#!nsh
+
+#set RC_FILE /fs/microsd/etc/rc.txt
+#set CONFIG_FILE /fs/microsd/etc/config.txt
+#set EXTRAS_FILE /fs/microsd/etc/extras.txt
+
+#
+# Mount microsd
+#
+echo "[init] Looking for microSD..."
+if mount -t vfat /dev/mmcsd0 /dev/microsd
+then
+	set LOG_FILE /fs/microsd/bootlog.txt
+	echo "[init] microSD mounted: /dev/microsd"
+else
+	echo "[init] microSD card NOT found"
+fi
+
+
+sercon
+
+uorb start #requierd for mpu6000
+
+#ms5611 start #baro required by sensors
+#hmc5883 start
+#mpu6000 start
+#sensors start
+gps start
+stim300 start
+#streamer start
+
+#nshterm /dev/ttyACM0 &

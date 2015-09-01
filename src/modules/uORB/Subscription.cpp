@@ -40,6 +40,18 @@
 #include "topics/parameter_update.h"
 #include "topics/actuator_controls.h"
 #include "topics/vehicle_gps_position.h"
+
+
+/*edited sz 4.12.2014*/
+#include "drivers/gps/novatel.h"
+#include "topics/vehicle_gps_heading.h"
+#include "topics/novatel_bestpos.h"	
+#include "topics/novatel_bestvel.h"	
+#include "topics/novatel_heading.h"
+/*end edited sz 4.12.2014*/
+
+
+
 #include "topics/satellite_info.h"
 #include "topics/sensor_combined.h"
 #include "topics/vehicle_attitude.h"
@@ -89,6 +101,12 @@ T Subscription<T>::getData() {
 template class __EXPORT Subscription<parameter_update_s>;
 template class __EXPORT Subscription<actuator_controls_s>;
 template class __EXPORT Subscription<vehicle_gps_position_s>;
+/*edited sz 4.12.2014*/
+template class __EXPORT Subscription<vehicle_gps_heading_s>;
+template class __EXPORT Subscription<novatel_bestpos_s>;
+template class __EXPORT Subscription<novatel_bestvel_s>;
+template class __EXPORT Subscription<novatel_heading_s>;
+/*end edited sz 4.12.2014*/
 template class __EXPORT Subscription<satellite_info_s>;
 template class __EXPORT Subscription<sensor_combined_s>;
 template class __EXPORT Subscription<vehicle_attitude_s>;

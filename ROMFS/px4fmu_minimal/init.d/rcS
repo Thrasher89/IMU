@@ -1,0 +1,28 @@
+#!nsh
+
+#set RC_FILE /fs/microsd/etc/rc.txt
+#set CONFIG_FILE /fs/microsd/etc/config.txt
+#set EXTRAS_FILE /fs/microsd/etc/extras.txt
+
+#
+# Mount microsd
+#
+echo "[init] Looking for microSD..."
+if mount -t vfat /dev/mmcsd0 /dev/microsd
+then
+	set LOG_FILE /fs/microsd/bootlog.txt
+	echo "[init] microSD mounted: /dev/microsd"
+	# Start playing the startup tune
+	tone_alarm start
+else
+	echo "[init] microSD card NOT found"
+	# Play SOS
+	tone_alarm error
+fi
+
+
+sercon
+#stim300 stream 
+stim300 start
+
+nshterm /dev/ttyACM0 &

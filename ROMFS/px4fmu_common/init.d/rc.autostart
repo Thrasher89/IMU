@@ -232,3 +232,4 @@ if param compare SYS_AUTOSTART 12001
 then
 	sh /etc/init.d/12001_octo_cox
 fi
+

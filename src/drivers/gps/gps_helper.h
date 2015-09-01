@@ -51,7 +51,7 @@ public:
 	virtual ~GPS_Helper() {};
 
 	virtual int			configure(unsigned &baud) = 0;
-	virtual int 			receive(unsigned timeout) = 0;
+	virtual int 		receive(unsigned timeout) = 0;
 	int 				set_baudrate(const int &fd, unsigned baud);
 	float				get_position_update_rate();
 	float				get_velocity_update_rate();

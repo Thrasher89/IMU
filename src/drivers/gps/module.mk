@@ -40,8 +40,10 @@ MODULE_COMMAND	= gps
 SRCS		= gps.cpp \
 		  gps_helper.cpp \
 		  mtk.cpp \
-		  ubx.cpp
-
-MODULE_STACKSIZE = 1200
+		  ubx.cpp \
+		  ashtech.cpp \
+		  novatel.cpp
+		  
+MODULE_STACKSIZE = 2000
 
 MAXOPTIMIZATION	 = -Os

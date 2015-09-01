@@ -1,0 +1,80 @@
+#!nsh
+#
+# Standard startup script for PX4FMU onboard sensor drivers.
+#
+
+ms5611 start
+adc start
+
+if mpu6000 -X start
+then
+fi
+
+if mpu6000 start
+then
+fi
+
+if l3gd20 -X start
+then
+fi
+
+if l3gd20 start
+then
+fi
+
+# MAG selection
+if param compare SENS_EXT_MAG 2
+then
+	if hmc5883 -I start
+	then
+	fi
+else
+	# Use only external as primary
+	if param compare SENS_EXT_MAG 1
+	then
+		if hmc5883 -X start
+		then
+		fi
+	else
+	# auto-detect the primary, prefer external
+		if hmc5883 start
+		then
+		fi
+	fi
+fi
+
+if ver hwcmp PX4FMU_V2
+then
+	if lsm303d -X start
+	then
+	fi
+
+	if lsm303d start
+	then
+	fi
+fi
+
+# Start airspeed sensors
+if meas_airspeed start
+then
+	echo "[init] Using MEAS airspeed sensor"
+else
+	if ets_airspeed start
+	then
+	else
+		if ets_airspeed start -b 1
+		then
+		fi
+	fi
+fi
+
+#
+# Start the sensor collection task.
+# IMPORTANT: this also loads param offsets
+# ALWAYS start this task before the
+# preflight_check.
+#
+if sensors start
+then
+	preflight_check &
+fi

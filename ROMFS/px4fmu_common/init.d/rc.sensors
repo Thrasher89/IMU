@@ -3,24 +3,28 @@
 # Standard startup script for PX4FMU onboard sensor drivers.
 #
 
+if stim300 start
+then
+fi
+
 ms5611 start
 adc start
 
-if mpu6000 -X start
-then
-fi
+#if mpu6000 -X start
+#then
+#fi
 
-if mpu6000 start
-then
-fi
+#if mpu6000 start
+#then
+#fi
 
-if l3gd20 -X start
-then
-fi
+#if l3gd20 -X start
+#then
+#fi
 
-if l3gd20 start
-then
-fi
+#if l3gd20 start
+#then
+#fi
 
 # MAG selection
 if param compare SENS_EXT_MAG 2

@@ -143,7 +143,7 @@ int matlab_csv_serial_thread_main(int argc, char *argv[])
 
 	warnx("opening port %s", uart_name);
 
-	int serial_fd = open(uart_name, O_RDWR | O_NOCTTY);
+	int serial_fd = open(uart_name, O_RDWR | O_NOCTTY | O_TRUNC);
 
 	unsigned speed = 921600;
 

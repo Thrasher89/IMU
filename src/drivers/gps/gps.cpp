@@ -63,15 +63,19 @@
 #include <drivers/drv_gps.h>
 #include <uORB/uORB.h>
 #include <uORB/topics/vehicle_gps_position.h>
+#include <uORB/topics/vehicle_gps_heading.h>
 #include <uORB/topics/satellite_info.h>
 
 #include <board_config.h>
 
 #include "ubx.h"
 #include "mtk.h"
+#include "novatel.h"
+#include "ashtech.h"
 
 
-#define TIMEOUT_5HZ 500
+#define TIMEOUT_5HZ 500		// in ms	(200ms was found that is too fast (gps lost errors))
+#define TIMEOUT_1HZ 2000
 #define RATE_MEASUREMENT_PERIOD 5000000
 
 /* oddly, ERROR is not defined for c++ */
@@ -120,6 +124,8 @@ private:
 	orb_advert_t			_report_gps_pos_pub;				///< uORB pub for gps position
 	struct satellite_info_s		*_p_report_sat_info;				///< pointer to uORB topic for satellite info
 	orb_advert_t			_report_sat_info_pub;				///< uORB pub for satellite info
+	struct vehicle_gps_heading_s	_report_gps_heading;				///< heading
+	orb_advert_t			_report_gps_heading_pub;			///< uORB pub for heading
 	float				_rate;						///< position update rate
 	bool				_fake_gps;					///< fake gps output
 
@@ -171,12 +177,13 @@ GPS::GPS(const char *uart_path, bool fake_gps, bool enable_sat_info) :
 	_task_should_exit(false),
 	_healthy(false),
 	_mode_changed(false),
-	_mode(GPS_DRIVER_MODE_UBX),
+	_mode(GPS_DRIVER_MODE_NOVATEL),
 	_Helper(nullptr),
 	_Sat_Info(nullptr),
 	_report_gps_pos_pub(-1),
 	_p_report_sat_info(nullptr),
 	_report_sat_info_pub(-1),
+	_report_gps_heading_pub(-1),
 	_rate(0.0f),
 	_fake_gps(fake_gps)
 {
@@ -188,6 +195,7 @@ GPS::GPS(const char *uart_path, bool fake_gps, bool enable_sat_info) :
 	/* we need this potentially before it could be set in task_main */
 	g_dev = this;
 	memset(&_report_gps_pos, 0, sizeof(_report_gps_pos));
+	memset(&_report_gps_heading, 0, sizeof(_report_gps_heading));
 
 	/* create satellite info data object if requested */
 	if (enable_sat_info) {
@@ -294,7 +302,7 @@ GPS::task_main()
 		if (_fake_gps) {
 
 			_report_gps_pos.timestamp_position = hrt_absolute_time();
-			_report_gps_pos.lat = (int32_t)47.378301e7f;
+			_report_gps_pos.lat = (int32_t)40.378301e7f;
 			_report_gps_pos.lon = (int32_t)8.538777e7f;
 			_report_gps_pos.alt = (int32_t)1200e3f;
 			_report_gps_pos.timestamp_variance = hrt_absolute_time();
@@ -341,6 +349,15 @@ GPS::task_main()
 				_Helper = new MTK(_serial_fd, &_report_gps_pos);
 				break;
 
+			case GPS_DRIVER_MODE_NOVATEL:
+				_Helper = new NOVATEL(_serial_fd, &_report_gps_pos, _p_report_sat_info, &_report_gps_heading);
+				break;
+				
+			case GPS_DRIVER_MODE_ASHTECH:
+				_Helper = new ASHTECH(_serial_fd, &_report_gps_pos, _p_report_sat_info);
+			break;
+
+
 			default:
 				break;
 			}
@@ -354,12 +371,13 @@ GPS::task_main()
 				_Helper->reset_update_rates();
 
 				int helper_ret;
-				while ((helper_ret = _Helper->receive(TIMEOUT_5HZ)) > 0 && !_task_should_exit) {
+				//while ((helper_ret = _Helper->receive(TIMEOUT_5HZ)) > 0 && !_task_should_exit) {
+				while ((helper_ret = _Helper->receive(TIMEOUT_1HZ)) > 0 && !_task_should_exit) {
 	//				lock();
 					/* opportunistic publishing - else invalid data would end up on the bus */
 
 					if (!(_pub_blocked)) {
-						if (helper_ret & 1) {
+						if (helper_ret & 1) {	//pos or vel update
 							if (_report_gps_pos_pub > 0) {
 								orb_publish(ORB_ID(vehicle_gps_position), _report_gps_pos_pub, &_report_gps_pos);
 
@@ -375,9 +393,18 @@ GPS::task_main()
 								_report_sat_info_pub = orb_advertise(ORB_ID(satellite_info), _p_report_sat_info);
 							}
 						}
+						/* Heading update */
+						if (helper_ret & 4) {	//pos or vel update
+							if (_report_gps_heading_pub > 0) {
+								orb_publish(ORB_ID(vehicle_gps_heading), _report_gps_heading_pub, &_report_gps_heading);
+
+							} else {
+								_report_gps_heading_pub = orb_advertise(ORB_ID(vehicle_gps_heading), &_report_gps_heading);
+							}
+						}
 					}
 
-					if (helper_ret & 1) {	// consider only pos info updates for rate calculation */
+					if (helper_ret & 1) {	// consider only pos or vel info updates for rate calculation */
 						last_rate_count++;
 					}
 
@@ -402,6 +429,13 @@ GPS::task_main()
 							mode_str = "MTK";
 							break;
 
+						case GPS_DRIVER_MODE_NOVATEL:
+							mode_str = "NOVATEL";
+							break;
+							
+						case GPS_DRIVER_MODE_ASHTECH:
+							mode_str = "ASHTECH";
+							break; 
 						default:
 							break;
 						}
@@ -409,6 +443,7 @@ GPS::task_main()
 						warnx("module found: %s", mode_str);
 						_healthy = true;
 					}
+					
 				}
 
 				if (_healthy) {
@@ -429,7 +464,15 @@ GPS::task_main()
 				break;
 
 			case GPS_DRIVER_MODE_MTK:
+				_mode = GPS_DRIVER_MODE_ASHTECH;
+				break;
+
+			case GPS_DRIVER_MODE_ASHTECH:
 				_mode = GPS_DRIVER_MODE_UBX;
+				break;
+
+			case GPS_DRIVER_MODE_NOVATEL:
+				_mode = GPS_DRIVER_MODE_NOVATEL;
 				break;
 
 			default:
@@ -475,6 +518,14 @@ GPS::print_info()
 		warnx("protocol: MTK");
 		break;
 
+	case GPS_DRIVER_MODE_ASHTECH:
+		warnx("protocol: ASHTECH");
+		break;
+
+	case GPS_DRIVER_MODE_NOVATEL:
+		warnx("protocol: NOVATEL");
+		break;
+
 	default:
 		break;
 	}
@@ -482,7 +533,7 @@ GPS::print_info()
 	warnx("port: %s, baudrate: %d, status: %s", _port, _baudrate, (_healthy) ? "OK" : "NOT OK");
 	warnx("sat info: %s", (_p_report_sat_info != nullptr) ? "enabled" : "disabled");
 
-	if (_report_gps_pos.timestamp_position != 0) {
+	//if (_report_gps_pos.timestamp_position != 0) {
 		warnx("position lock: %dD, satellites: %d, last update: %8.4fms ago", (int)_report_gps_pos.fix_type,
 				_report_gps_pos.satellites_used, (double)(hrt_absolute_time() - _report_gps_pos.timestamp_position) / 1000.0);
 		warnx("lat: %d, lon: %d, alt: %d", _report_gps_pos.lat, _report_gps_pos.lon, _report_gps_pos.alt);
@@ -493,7 +544,7 @@ GPS::print_info()
 		warnx("rate velocity: \t%6.2f Hz", (double)_Helper->get_velocity_update_rate());
 		warnx("rate publication:\t%6.2f Hz", (double)_rate);
 
-	}
+	//}
 
 	usleep(100000);
 }

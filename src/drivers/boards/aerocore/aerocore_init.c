@@ -70,6 +70,8 @@
 
 #include <systemlib/cpuload.h>
 #include <systemlib/perf_counter.h>
+#include <systemlib/systemlib.h>
+
 
 /****************************************************************************
  * Pre-Processor Definitions

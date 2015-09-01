@@ -68,6 +68,7 @@
 
 #include <modules/px4iofirmware/protocol.h>
 
+
 #ifdef PX4IO_SERIAL_BASE
 
 device::Device	*PX4IO_serial_interface();

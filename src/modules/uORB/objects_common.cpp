@@ -82,6 +82,22 @@ ORB_DEFINE(sensor_combined, struct sensor_combined_s);
 #include "topics/vehicle_gps_position.h"
 ORB_DEFINE(vehicle_gps_position, struct vehicle_gps_position_s);
 
+/*
+   * edited sz 23.11.2014
+   */
+#include "drivers/gps/novatel.h"
+#include "topics/vehicle_gps_heading.h"
+#include "topics/novatel_bestvel.h"	
+#include "topics/novatel_bestpos.h"	
+#include "topics/novatel_heading.h"
+ORB_DEFINE(vehicle_gps_heading, struct vehicle_gps_heading_s);
+ORB_DEFINE(novatel_bestpos, struct novatel_bestpos_s);
+ORB_DEFINE(novatel_bestvel, struct novatel_bestvel_s);
+ORB_DEFINE(novatel_heading, struct novatel_heading_s);
+/*
+   * end edited sz 23.11.2014
+   */
+
 #include "topics/satellite_info.h"
 ORB_DEFINE(satellite_info, struct satellite_info_s);
 

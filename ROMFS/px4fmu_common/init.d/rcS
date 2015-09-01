@@ -30,6 +30,8 @@ else
 	tone_alarm error
 fi
 
+
+
 #
 # Look for an init script on the microSD card.
 # Disable autostart if the script found.
@@ -460,6 +462,7 @@ then
 	#
 	sh /etc/init.d/rc.logging
 
+	$GPS = no
 	if [ $GPS == yes ]
 	then
 		echo "[init] Start GPS"
@@ -601,3 +604,10 @@ then
 
 # End of autostart
 fi
+
+
+
+
+
+
+

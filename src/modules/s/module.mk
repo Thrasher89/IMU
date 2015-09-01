@@ -1,0 +1,2 @@
+MODULE_COMMAND = s
+SRCS = s.c 
